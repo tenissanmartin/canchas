@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1f4d3a">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Equipos SM">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Equipos 2026 por jugador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Archivo+Narrow:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: barra de filtros fija arriba, tres vistas (matriz, listado, por equipo) y un panel de detalle que se abre abajo. */
+:root{
+  --bg:#F3F6F4; --panel:#FFFFFF; --ink:#15241D; --muted:#5B6B63; --line:#D9E1DC;
+  --accent:#17604A; --on-accent:#FFFFFF; --hover:#E8F0EC; --zebra:#F8FAF9;
+  --c0:#1F7A5A; --c1:#2D68B8; --c2:#C0502A; --c3:#8B4DB3; --c4:#B98A0A; --c5:#0C8794;
+  --red:#C62828; --shadow:0 6px 24px rgba(20,35,29,.16);
+  --display:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+  --body:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1714; --panel:#17211C; --ink:#E6EEE9; --muted:#9AAAA1; --line:#2A3831;
+    --accent:#4FC79B; --on-accent:#0B1A13; --hover:#1F2D26; --zebra:#141E19;
+    --c0:#4FC79B; --c1:#6FA3EA; --c2:#F08A62; --c3:#BE8BE0; --c4:#E3B83C; --c5:#4CC4D2;
+    --red:#FF7B72; --shadow:0 6px 24px rgba(0,0,0,.5);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1714; --panel:#17211C; --ink:#E6EEE9; --muted:#9AAAA1; --line:#2A3831;
+  --accent:#4FC79B; --on-accent:#0B1A13; --hover:#1F2D26; --zebra:#141E19;
+  --c0:#4FC79B; --c1:#6FA3EA; --c2:#F08A62; --c3:#BE8BE0; --c4:#E3B83C; --c5:#4CC4D2;
+  --red:#FF7B72; --shadow:0 6px 24px rgba(0,0,0,.5);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+button{font:inherit;color:inherit}
+.t0{--c:var(--c0)} .t1{--c:var(--c1)} .t2{--c:var(--c2)} .t3{--c:var(--c3)} .t4{--c:var(--c4)} .t5{--c:var(--c5)}
+.wrap{max-width:1280px;margin:0 auto;padding:20px 16px 40px;display:flex;flex-direction:column;gap:16px}
+header h1{font-family:var(--display);font-weight:700;font-size:34px;line-height:1.05;margin:0;text-wrap:balance;letter-spacing:.2px}
+header p{margin:6px 0 0;color:var(--muted);max-width:70ch}
+.filters{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.frow{display:grid;grid-template-columns:130px 1fr;gap:8px 12px;align-items:start}
+.flabel{font-family:var(--display);font-weight:600;font-size:14px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding-top:5px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:3px 11px;cursor:pointer;font-size:13.5px;display:inline-flex;align-items:center;gap:6px;line-height:1.35}
+.chip:hover{background:var(--hover)}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.chip .sw{width:9px;height:9px;border-radius:2px;background:var(--c)}
+.chip[aria-pressed="true"] .sw{outline:1.5px solid var(--on-accent)}
+.ftop{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.ftop .field{display:flex;align-items:center;gap:8px}
+input[type=search],select{font:inherit;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:7px 10px;min-height:36px}
+input[type=search]{width:min(320px,100%)}
+label.small{font-size:13px;color:var(--muted)}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:7px 12px;cursor:pointer;min-height:36px}
+.btn:hover{background:var(--hover)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.sp{flex:1}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.kpis{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:baseline}
+.kpi b{font-family:var(--display);font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi span{color:var(--muted);margin-left:5px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.tabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px}
+.tab{border:0;background:none;padding:7px 14px;border-radius:8px;cursor:pointer;font-weight:500}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--on-accent)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--c);margin-right:6px;vertical-align:-1px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.scroll{overflow:auto;max-height:72vh;border-radius:10px}
+table{border-collapse:separate;border-spacing:0}
+.mx{font-size:13px}
+.mx th,.mx td{padding:0;border-bottom:1px solid var(--line);border-right:1px solid var(--line)}
+.mx thead th{position:sticky;background:var(--panel);z-index:2}
+.mx thead tr:first-child th{top:0;height:30px}
+.mx thead tr:nth-child(2) th{top:30px}
+.mx .corner{left:0;z-index:4;min-width:250px;text-align:left;padding:0 10px;font-family:var(--display);font-size:14px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);vertical-align:bottom;padding-bottom:6px}
+.mx .grp{border-top:3px solid var(--c);padding:0 8px;text-align:left;font-family:var(--display);font-weight:600;font-size:14px;white-space:nowrap}
+.mx .tt{width:28px;min-width:28px;border-top:3px solid var(--c);vertical-align:bottom}
+.vh{writing-mode:vertical-rl;transform:rotate(180deg);height:136px;padding:6px 3px;white-space:nowrap;font-size:12.5px;background:none;border:0;cursor:pointer;text-align:left}
+.vh:hover{color:var(--accent);text-decoration:underline}
+.mx .pl{position:sticky;left:0;z-index:1;background:var(--panel);text-align:left;font-weight:400;padding:0 10px;min-width:250px;white-space:nowrap}
+.mx tbody tr:nth-child(even) th.pl,.mx tbody tr:nth-child(even) td{background:var(--zebra)}
+.mx tbody tr:hover th.pl,.mx tbody tr:hover td{background:var(--hover)}
+.mx .pl .row{display:flex;align-items:center;justify-content:space-between;gap:10px;height:28px}
+.badges{display:flex;gap:4px;align-items:center}
+.badge.pj{background:var(--hover);color:var(--ink)}
+.stats{display:flex;flex-wrap:wrap;gap:6px 22px;margin:6px 0 12px}
+.stat b{font-family:var(--display);font-size:24px;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat span{display:block;font-size:12.5px;color:var(--muted)}
+.link{border:0;background:none;padding:0;cursor:pointer;text-align:left}
+.link:hover{color:var(--accent);text-decoration:underline}
+.badge{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;border:1px solid var(--line);border-radius:999px;padding:0 7px;line-height:18px}
+.mx td{text-align:center;height:28px}
+.mx td{position:relative}
+.mx td.on i{display:block;width:14px;height:14px;border-radius:4px;background:var(--c);margin:auto}
+.mx td.on.nj i{background:none;border:2px solid var(--c);width:14px;height:14px}
+.mx td.ag::after{content:"A";position:absolute;top:1px;right:1px;width:12px;height:12px;border-radius:50%;background:var(--red);color:#fff;font:700 8.5px/12px var(--body);text-align:center}
+.mk{display:inline-block;font-size:11px;font-weight:600;line-height:16px;border-radius:999px;padding:0 6px;white-space:nowrap}
+.mk.ag{background:var(--red);color:#fff}
+.mk.nj{border:1px solid var(--muted);color:var(--muted)}
+.cn{display:inline-block;min-width:2.2em;margin-right:6px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600}
+.mk.pj{color:var(--muted);font-weight:500;padding:0}
+.lg{display:inline-flex;align-items:center;gap:6px}
+.lg b{display:inline-block;width:14px;height:14px;border-radius:4px;background:var(--muted)}
+.lg b.h{background:none;border:2px solid var(--muted)}
+.lg b.a{width:12px;height:12px;border-radius:50%;background:var(--red);color:#fff;font:700 8.5px/12px var(--body);text-align:center}
+.mx tfoot td,.mx tfoot th{position:sticky;bottom:0;background:var(--panel);z-index:2;font-variant-numeric:tabular-nums;color:var(--muted);height:28px;border-top:2px solid var(--line)}
+.mx tfoot th.pl{z-index:3;font-family:var(--display);text-transform:uppercase;font-size:13px;letter-spacing:.5px}
+.ls{width:100%;font-size:14px}
+.ls th,.ls td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.ls thead th{position:sticky;top:0;background:var(--panel);z-index:2;font-family:var(--display);text-transform:uppercase;letter-spacing:.5px;font-size:13px;color:var(--muted)}
+.ls tbody tr:hover{background:var(--hover)}
+.ls .sb{font:inherit;text-transform:inherit;letter-spacing:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:4px;text-align:left}
+.ls .sb:hover{color:var(--accent)}
+.ls .sb .ar{font-size:11px;color:var(--accent);min-width:10px}
+.ls td.num{font-variant-numeric:tabular-nums;width:60px}
+.ls th.nm{white-space:nowrap;font-weight:500}
+.tag{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-left:4px solid var(--c);border-radius:6px;padding:1px 8px;margin:0 6px 6px 0;font-size:13px;background:var(--panel);cursor:pointer}
+.tag:hover{background:var(--hover)}
+.tag.dim{opacity:.55;border-left-style:dashed}
+.teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;padding:14px}
+.tg{margin:0 0 6px}
+.tg h3{font-family:var(--display);font-size:19px;margin:14px 14px 0;display:flex;align-items:center;gap:8px}
+.tg h3 i{width:12px;height:12px;border-radius:3px;background:var(--c);display:inline-block}
+.card{border:1px solid var(--line);border-top:3px solid var(--c);border-radius:8px;padding:10px 12px;background:var(--panel)}
+.card header{display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin-bottom:6px}
+.card .tn{font-weight:600;font-size:14px}
+.card ul{list-style:none;margin:0;padding:0;font-size:13.5px;display:flex;flex-direction:column;gap:2px}
+.empty{padding:40px 16px;text-align:center;color:var(--muted)}
+.detail{position:sticky;bottom:12px;z-index:10;background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--accent);border-radius:10px;box-shadow:var(--shadow);padding:14px 16px;max-height:42vh;overflow:auto}
+.detail[hidden]{display:none}
+.detail h2{font-family:var(--display);font-size:22px;margin:0 0 2px}
+.detail .sub{color:var(--muted);font-size:13.5px;margin-bottom:10px}
+.detail .x{position:absolute;right:10px;top:10px}
+.detail .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 16px;font-size:14px}
+.foot{color:var(--muted);font-size:13px;max-width:90ch}
+.toast{font-size:13px;color:var(--muted)}
+textarea.copybox{width:100%;height:120px;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px}
+@media (max-width:640px){
+  header h1{font-size:28px}
+  .frow{grid-template-columns:1fr}
+  .flabel{padding-top:0}
+  .mx .corner,.mx .pl{min-width:170px}
+}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Equipos 2026 por jugador</h1>
+    <p>Club Atlético Ferrocarril General San Martín. Cada jugador con los equipos de la AAT en los que figura este año, si jugó o no en cada uno, y si entró como agregado.</p>
+  </header>
+
+  <section class="filters" aria-label="Filtros">
+    <div class="ftop">
+      <div class="field"><label class="small" for="q">Buscar jugador</label><input id="q" type="search" placeholder="Apellido o nombre" autocomplete="off"></div>
+      <div class="field"><label class="small" for="min">Mínimo de equipos</label>
+        <select id="min"><option value="1">1 o más</option><option value="2">2 o más</option><option value="3">3 o más</option><option value="4">4 o más</option><option value="5">5 o más</option><option value="6">6 o más</option></select></div>
+      <div class="field"><label class="small" for="minp">Mínimo de partidos</label>
+        <select id="minp"><option value="0">Todos</option><option value="1">1 o más</option><option value="5">5 o más</option><option value="10">10 o más</option><option value="15">15 o más</option><option value="20">20 o más</option><option value="30">30 o más</option></select></div>
+      <div class="field"><label class="small" for="part">Participación en el equipo</label>
+        <select id="part"><option value="">Todas</option><option value="jugo">Jugó</option><option value="nojugo">No jugó</option><option value="ag">Agregados</option><option value="noag">Sin agregados</option></select></div>
+      <span class="sp"></span>
+      <button class="btn" id="reset" type="button">Limpiar filtros</button>
+      <button class="btn primary" id="refresh" type="button" title="Copia el pedido para pegarlo en el chat con Claude">Actualizar datos</button>
+    </div>
+    <div id="groups"></div>
+    <div class="kpis" id="kpis" aria-live="polite"></div>
+    <div class="toast" id="asof"></div>
+    <div id="refreshbox"></div>
+  </section>
+
+  <div class="bar">
+    <div class="tabs" role="tablist" aria-label="Vista">
+      <button class="tab" role="tab" id="tab-matriz" data-tab="matriz" aria-selected="true">Matriz</button>
+      <button class="tab" role="tab" id="tab-listado" data-tab="listado" aria-selected="false">Listado</button>
+      <button class="tab" role="tab" id="tab-equipos" data-tab="equipos" aria-selected="false">Por equipo</button>
+    </div>
+    <div class="field" style="display:flex;gap:8px;align-items:center">
+      <label class="small" for="sort">Orden</label>
+      <select id="sort"><option value="name">Apellido (A-Z)</option><option value="count">Más equipos primero</option><option value="matches">Más partidos primero</option></select>
+    </div>
+  </div>
+  <div class="legend" id="legend"></div>
+
+  <main id="view" class="panel" aria-live="polite"></main>
+
+  <p class="foot">Fuente: lista de buena fe de cada equipo y perfil de cada jugador en deportivoaat.com.ar, tomados el 13/11/2026. Incluye jugadores menores y a quienes figuran como agregados (la AAT los muestra en rojo); un agregado puede ser de otro club. Un equipo sin jugadores cargados no aparece. "Jugó" significa al menos un partido de ese equipo que no sea WO; "No jugó" incluye a quien solo figura con WO. Los partidos de cada jugador son la suma de los de sus equipos de 2026 (individuales y dobles, WO incluidos) y no cambian con los filtros. La edad es la que muestra la AAT en el perfil de cada jugador (consultada el 22/11/2026). El número a la izquierda de cada jugador en la pestaña Equipos es su carnet de dobles (segundo número de la clasificación del perfil); la lista de cada equipo va ordenada por ese número, de menor a mayor, y "–" es un jugador sin carnet cargado.</p>
+
+  <aside class="detail" id="detail" hidden aria-label="Detalle"></aside>
+</div>
+
+<script>
+(function(){
+var DATA = {"teams":[{"id":260263,"torneo":"Menores 1ª etapa","rama":"Niñas","edad":"Sub-16","nivel":"Nivel C","letra":"A"},{"id":262841,"torneo":"Menores 2ª etapa","rama":"Niñas","edad":"Sub-16","nivel":"Nivel B","letra":"A"},{"id":261402,"torneo":"Libres","rama":"Damas","edad":"Libres","nivel":"Cuarta","letra":"A"},{"id":260979,"torneo":"Libres","rama":"Caballeros","edad":"Libres","nivel":"Tercera","letra":"A"},{"id":259812,"torneo":"Interclub por edad (1er cuat.)","rama":"Caballeros","edad":"+19","nivel":"Cuarta","letra":"A"},{"id":260560,"torneo":"Mixto mayores","rama":"Mixto","edad":"+40","nivel":"Intermedia","letra":"A"},{"id":262596,"torneo":"Interclub Mayores (agosto)","rama":"Caballeros","edad":"+45","nivel":"Quinta","letra":"A"},{"id":259721,"torneo":"Interclub por edad (1er cuat.)","rama":"Caballeros","edad":"+40","nivel":"Cuarta","letra":"B"},{"id":258911,"torneo":"Interclub por edad (1er cuat.)","rama":"Caballeros","edad":"+19","nivel":"Intermedia","letra":"B"},{"id":262381,"torneo":"Interclub Mayores (agosto)","rama":"Caballeros","edad":"+25","nivel":"Tercera","letra":"A"},{"id":260780,"torneo":"Libres","rama":"Caballeros","edad":"Libres","nivel":"Primera","letra":"A"},{"id":260661,"torneo":"Libres","rama":"Damas","edad":"Libres","nivel":"Segunda","letra":"B"},{"id":262438,"torneo":"Interclub Mayores (agosto)","rama":"Damas","edad":"+65","nivel":"Intermedia","letra":"A"},{"id":261761,"torneo":"Interclub Mayores (agosto)","rama":"Damas","edad":"+55","nivel":"Intermedia","letra":"A"},{"id":258782,"torneo":"Interclub por edad (1er cuat.)","rama":"Damas","edad":"+50","nivel":"Segunda","letra":"A"},{"id":260580,"torneo":"Mixto mayores","rama":"Mixto","edad":"+50","nivel":"Primera","letra":"A"},{"id":261665,"torneo":"Interclub Mayores (agosto)","rama":"Damas","edad":"+45","nivel":"Segunda","letra":"A"},{"id":258837,"torneo":"Interclub por edad (1er cuat.)","rama":"Damas","edad":"+60","nivel":"Primera","letra":"A"},{"id":259476,"torneo":"Interclub por edad (1er cuat.)","rama":"Caballeros","edad":"+50","nivel":"Tercera","letra":"A"},{"id":259567,"torneo":"Interclub por edad (1er cuat.)","rama":"Caballeros","edad":"+60","nivel":"Intermedia","letra":"A"},{"id":262545,"torneo":"Interclub Mayores (agosto)","rama":"Caballeros","edad":"+55","nivel":"Cuarta","letra":"A"},{"id":261379,"torneo":"Mixto mayores","rama":"Mixto","edad":"+50","nivel":"Segunda","letra":"A"},{"id":259109,"torneo":"Interclub por edad (1er cuat.)","rama":"Caballeros","edad":"+40","nivel":"Intermedia","letra":"A"},{"id":262150,"torneo":"Interclub Mayores (agosto)","rama":"Caballeros","edad":"+55","nivel":"Intermedia","letra":"A"},{"id":262435,"torneo":"Interclub Mayores (agosto)","rama":"Caballeros","edad":"+65","nivel":"Segunda","letra":"A"},{"id":258912,"torneo":"Interclub por edad (1er cuat.)","rama":"Caballeros","edad":"+19","nivel":"Intermedia","letra":"A"},{"id":259652,"torneo":"Interclub por edad (1er cuat.)","rama":"Caballeros","edad":"+70","nivel":"Segunda","letra":"A"},{"id":258622,"torneo":"Interclub por edad (1er cuat.)","rama":"Damas","edad":"+30","nivel":"Segunda","letra":"A"},{"id":258706,"torneo":"Interclub por edad (1er cuat.)","rama":"Damas","edad":"+40","nivel":"Tercera","letra":"A"},{"id":261598,"torneo":"Interclub Mayores (agosto)","rama":"Damas","edad":"+35","nivel":"Intermedia","letra":"A"},{"id":261716,"torneo":"Interclub Mayores (agosto)","rama":"Damas","edad":"+45","nivel":"Tercera","letra":"A"},{"id":262093,"torneo":"Interclub Mayores (agosto)","rama":"Caballeros","edad":"+45","nivel":"Cuarta","letra":"A"},{"id":261982,"torneo":"Interclub Mayores (agosto)","rama":"Caballeros","edad":"+45","nivel":"Intermedia","letra":"A"},{"id":259720,"torneo":"Interclub por edad (1er cuat.)","rama":"Caballeros","edad":"+40","nivel":"Cuarta","letra":"A"},{"id":258812,"torneo":"Interclub por edad (1er cuat.)","rama":"Damas","edad":"+50","nivel":"Tercera","letra":"B"},{"id":260737,"torneo":"Libres","rama":"Damas","edad":"Libres","nivel":"Tercera","letra":"A"},{"id":258681,"torneo":"Interclub por edad (1er cuat.)","rama":"Damas","edad":"+40","nivel":"Segunda","letra":"A"},{"id":259796,"torneo":"Interclub por edad (1er cuat.)","rama":"Damas","edad":"+60","nivel":"Segunda","letra":"A"},{"id":261392,"torneo":"Libres","rama":"Caballeros","edad":"Libres","nivel":"Intermedia","letra":"A"},{"id":260846,"torneo":"Libres","rama":"Caballeros","edad":"Libres","nivel":"Segunda","letra":"A"},{"id":259436,"torneo":"Interclub por edad (1er cuat.)","rama":"Caballeros","edad":"+50","nivel":"Segunda","letra":"A"},{"id":259803,"torneo":"Interclub por edad (1er cuat.)","rama":"Damas","edad":"+50","nivel":"Cuarta","letra":"A"},{"id":262842,"torneo":"Menores 2ª etapa","rama":"Niñas","edad":"Sub-14","nivel":"Nivel C","letra":"A"},{"id":260264,"torneo":"Menores 1ª etapa","rama":"Varones","edad":"Sub-16","nivel":"Nivel A","letra":"A"},{"id":261328,"torneo":"Libres","rama":"Caballeros","edad":"Libres","nivel":"Quinta","letra":"A"},{"id":260266,"torneo":"Menores 1ª etapa","rama":"Varones","edad":"Sub-14","nivel":"Nivel A","letra":"A"},{"id":263287,"torneo":"Menores 2ª etapa","rama":"Varones","edad":"Sub-14","nivel":"Nivel A","letra":"A"},{"id":262840,"torneo":"Menores 2ª etapa","rama":"Varones","edad":"Sub-16","nivel":"Nivel A","letra":"A"},{"id":262845,"torneo":"Menores 2ª etapa","rama":"Varones","edad":"Sub-18","nivel":"Nivel A","letra":"A"},{"id":262551,"torneo":"Interclub Mayores (agosto)","rama":"Damas","edad":"+55","nivel":"Tercera","letra":"A"},{"id":261909,"torneo":"Interclub Mayores (agosto)","rama":"Caballeros","edad":"+35","nivel":"Tercera","letra":"A"},{"id":260265,"torneo":"Menores 1ª etapa","rama":"Varones","edad":"Sub-18","nivel":"Nivel B","letra":"A"},{"id":262843,"torneo":"Menores 2ª etapa","rama":"Varones","edad":"Sub-12","nivel":"Nivel A","letra":"A"},{"id":260267,"torneo":"Menores 1ª etapa","rama":"Varones","edad":"Sub-12","nivel":"Nivel B","letra":"A"},{"id":258937,"torneo":"Interclub por edad (1er cuat.)","rama":"Caballeros","edad":"+19","nivel":"Segunda","letra":"A"}],"players":[{"n":"Adamo, Micaela","e":[260263,261402,262841],"c":{"260263":[0,1,1,0,2,2,0],"261402":[0,1,1,0,5,2,0],"262841":[0,1,1,0,0,0,0]},"m":[3,3,0,7,4,0],"a":15,"cd":62},{"n":"Altamira, Valentín Mateo","e":[259812,260979],"c":{"259812":[0,7,5,0,0,0,0],"260979":[0,0,0,0,0,0,0]},"m":[7,5,0,0,0,0],"a":23,"cd":59},{"n":"Anderson, Guillermo","e":[259721,260560,262596],"c":{"259721":[0,0,0,0,3,0,0],"260560":[0,0,0,0,3,2,0],"262596":[0,0,0,0,3,1,1]},"m":[0,0,0,9,3,1],"a":46,"cd":62},{"n":"Aranguren, Lucas","e":[258911,260780,262381],"c":{"258911":[0,0,0,0,2,1,0],"260780":[0,0,0,0,1,0,0],"262381":[0,0,0,0,1,1,0]},"m":[0,0,0,4,2,0],"a":32,"cd":34},{"n":"Aranguren, Maria Del Car.","e":[258782,258837,260580,260661,261665,261761,262438],"c":{"258782":[0,0,0,0,4,3,0],"258837":[0,0,0,0,4,2,0],"260580":[0,0,0,0,1,1,0],"260661":[0,0,0,0,0,0,0],"261665":[0,0,0,0,1,0,0],"261761":[0,0,0,0,5,2,0],"262438":[0,0,0,0,7,7,0]},"m":[0,0,0,22,15,0],"a":66,"cd":40},{"n":"Aranguren, Valentina","e":[262842],"c":{"262842":[0,4,3,0,2,2,0]},"m":[4,3,0,2,2,0],"a":12,"cd":62},{"n":"Arbotto, Benjamin","e":[260265,261328,262845],"c":{"260265":[0,5,4,0,0,0,0],"261328":[1,0,0,0,4,0,0],"262845":[0,2,0,0,2,0,0]},"m":[7,4,0,6,0,0],"a":16,"cd":62},{"n":"Arone, Pablo Gustavo","e":[259476,259567,261379,262545],"c":{"259476":[0,0,0,0,3,3,1],"259567":[0,1,0,0,2,0,0],"261379":[0,0,0,0,0,0,0],"262545":[0,0,0,0,2,1,0]},"m":[1,0,0,7,4,1],"a":63,"cd":58},{"n":"Barbieri, Carlos Mario","e":[259567,261379,262545],"c":{"259567":[0,1,0,0,7,5,0],"261379":[0,0,0,0,0,0,0],"262545":[0,0,0,0,5,4,1]},"m":[1,0,0,12,9,1],"a":63,"cd":47},{"n":"Bessone, Nicolas","e":[260265,261328,262845],"c":{"260265":[0,0,0,0,5,1,0],"261328":[1,0,0,0,1,0,0],"262845":[0,0,0,0,4,1,0]},"m":[0,0,0,10,2,0],"a":18,"cd":62},{"n":"Biasotti, Gustavo Adrian","e":[259109,259476,259567,260979,261379,262150,262381,262545],"c":{"259109":[0,0,0,0,3,0,0],"259476":[0,0,0,0,1,1,0],"259567":[0,0,0,0,5,5,0],"260979":[0,0,0,0,0,0,0],"261379":[0,0,0,0,0,0,0],"262150":[1,1,0,0,0,0,0],"262381":[0,0,0,0,0,0,0],"262545":[0,0,0,0,3,3,1]},"m":[1,0,0,12,9,1],"a":60,"cd":47},{"n":"Boulay, Pablo","e":[259567,262545],"c":{"259567":[0,0,0,0,0,0,0],"262545":[0,0,0,0,0,0,0]},"m":[0,0,0,0,0,0],"a":62,"cd":62},{"n":"Branc, Fabio","e":[259567,262435,262545],"c":{"259567":[0,1,0,0,0,0,0],"262435":[0,3,2,0,1,0,0],"262545":[0,0,0,0,0,0,0]},"m":[4,2,0,1,0,0],"a":67,"cd":62},{"n":"Branc, Mateo","e":[258912,260780,262381],"c":{"258912":[0,6,4,0,0,0,0],"260780":[0,5,3,0,0,0,0],"262381":[0,0,0,0,0,0,0]},"m":[11,7,0,0,0,0],"a":25,"cd":18},{"n":"Branc, Simon","e":[259812,260979,262381],"c":{"259812":[0,0,0,0,3,2,0],"260979":[0,0,0,0,0,0,0],"262381":[0,0,0,0,0,0,0]},"m":[0,0,0,3,2,0],"a":25,"cd":54},{"n":"Brandariz, Nicolas","e":[259652,262435],"c":{"259652":[0,0,0,0,6,3,0],"262435":[0,1,0,0,6,3,0]},"m":[1,0,0,12,6,0],"a":74,"cd":53},{"n":"Brennan, Cecilia Noemí","e":[258622,258706,260560,261402,261598,261716],"c":{"258622":[0,0,0,0,1,0,0],"258706":[0,1,0,0,2,0,0],"260560":[0,0,0,0,4,1,0],"261402":[0,0,0,0,0,0,0],"261598":[0,0,0,0,0,0,0],"261716":[0,0,0,0,6,3,0]},"m":[1,0,0,13,4,0],"a":47,"cd":62},{"n":"Bruzzone, Cesar Manuel","e":[259476,259720,260979,261379,261982,262093,262545],"c":{"259476":[0,0,0,0,3,2,1],"259720":[0,0,0,0,1,1,0],"260979":[0,0,0,0,0,0,0],"261379":[0,0,0,0,1,0,0],"261982":[1,2,0,0,0,0,0],"262093":[0,0,0,0,0,0,0],"262545":[0,5,4,1,0,0,0]},"m":[7,4,1,5,3,1],"a":56,"cd":56},{"n":"Caicco, Mateo Nehuen","e":[260265,260979,261328,262845],"c":{"260265":[0,0,0,0,0,0,0],"260979":[1,3,0,0,0,0,0],"261328":[0,0,0,0,0,0,0],"262845":[0,1,1,0,1,1,0]},"m":[4,1,0,1,1,0],"a":17,"cd":59},{"n":"Cairo, Monica Susana","e":[258681,258812,258837,259796,260560,260737,261379,261665,261761],"c":{"258681":[0,1,0,0,1,0,0],"258812":[0,1,1,0,2,1,0],"258837":[1,0,0,0,2,0,0],"259796":[0,0,0,0,4,3,0],"260560":[0,0,0,0,0,0,0],"260737":[0,0,0,0,4,1,0],"261379":[0,0,0,0,4,3,0],"261665":[0,0,0,0,2,2,0],"261761":[0,1,0,0,2,1,0]},"m":[3,1,0,21,11,0],"a":61,"cd":53},{"n":"Cambria Riccardi, Benjamin","e":[260266,263287],"c":{"260266":[0,0,0,0,4,0,0],"263287":[0,1,0,0,2,1,0]},"m":[1,0,0,6,1,0],"a":13,"cd":62},{"n":"Campmany, Liliana Mabel","e":[258782,258837,260661,261379,261665,261761,262438],"c":{"258782":[0,0,0,0,5,3,0],"258837":[0,0,0,0,6,0,0],"260661":[0,0,0,0,1,0,0],"261379":[0,0,0,0,0,0,0],"261665":[0,0,0,0,0,0,0],"261761":[0,0,0,0,7,5,0],"262438":[0,0,0,0,7,7,0]},"m":[0,0,0,26,15,0],"a":67,"cd":52},{"n":"Cardaci, Lucas Vicente","e":[260265,260846,260979,262845],"c":{"260265":[0,4,4,0,0,0,0],"260846":[1,2,0,0,3,0,0],"260979":[0,4,3,0,0,0,0],"262845":[0,4,2,0,0,0,0]},"m":[14,9,0,3,0,0],"a":17,"cd":62},{"n":"Carmona, Santiago","e":[258912,260780,261392],"c":{"258912":[0,2,1,0,6,5,0],"260780":[1,0,0,0,5,2,0],"261392":[0,0,0,0,4,3,0]},"m":[2,1,0,15,10,0],"a":23,"cd":34},{"n":"Carreras, Joaquin","e":[259812],"c":{"259812":[0,1,0,0,0,0,0]},"m":[1,0,0,0,0,0],"a":19,"cd":62},{"n":"Casanova Marin, Santiago Ruy","e":[258911,260846,261392,262381],"c":{"258911":[0,2,0,0,3,2,0],"260846":[0,2,0,0,4,0,0],"261392":[1,0,0,0,1,0,0],"262381":[0,0,0,0,4,4,0]},"m":[4,0,0,12,6,0],"a":25,"cd":34},{"n":"Cavassa, Alberto","e":[259652],"c":{"259652":[0,0,0,0,4,0,0]},"m":[0,0,0,4,0,0],"a":77,"cd":57},{"n":"Cavassa, Eliana Anabel","e":[258622,258681,258706,260560,260661,260737,261598],"c":{"258622":[0,5,4,0,2,1,0],"258681":[1,1,1,0,6,6,0],"258706":[0,2,2,0,0,0,0],"260560":[0,0,0,0,1,0,0],"260661":[1,4,2,0,0,0,0],"260737":[0,1,1,0,0,0,0],"261598":[0,0,0,0,3,3,0]},"m":[13,10,0,12,10,0],"a":43,"cd":52},{"n":"Chepard, Alejandro","e":[259109,259436,259567,262150],"c":{"259109":[0,0,0,0,0,0,0],"259436":[0,0,0,0,2,2,0],"259567":[0,0,0,0,4,3,0],"262150":[0,0,0,0,5,5,0]},"m":[0,0,0,11,10,0],"a":65,"cd":30},{"n":"Cicchinelli, Karina","e":[260560,260580,260661,261598,261665,261761],"c":{"260560":[0,0,0,0,0,0,0],"260580":[0,0,0,0,6,5,0],"260661":[0,3,3,0,1,1,0],"261598":[0,1,1,0,0,0,0],"261665":[0,0,0,0,1,1,0],"261761":[0,4,4,0,1,1,0]},"m":[8,8,0,9,8,0],"a":55,"cd":40},{"n":"Cofano, Valeria Clara","e":[258812,259803,261716],"c":{"258812":[1,0,0,0,2,0,0],"259803":[0,0,0,0,3,1,0],"261716":[0,0,0,0,6,3,0]},"m":[0,0,0,11,4,0],"a":50,"cd":62},{"n":"Cofre, Bernardita","e":[262842],"c":{"262842":[1,1,0,0,0,0,0]},"m":[1,0,0,0,0,0],"a":13,"cd":null},{"n":"Correa, Thiago","e":[259812],"c":{"259812":[0,0,0,0,0,0,0]},"m":[0,0,0,0,0,0],"a":19,"cd":62},{"n":"Cyngiser, Alberto Mario","e":[259652],"c":{"259652":[0,1,0,0,0,0,0]},"m":[1,0,0,0,0,0],"a":79,"cd":57},{"n":"Dazzini Moran, Lucio","e":[260264,260266,261328,262840,263287],"c":{"260264":[0,0,0,0,0,0,0],"260266":[0,4,2,0,0,0,0],"261328":[0,0,0,0,0,0,0],"262840":[0,0,0,0,0,0,0],"263287":[0,3,2,0,0,0,0]},"m":[7,4,0,0,0,0],"a":14,"cd":62},{"n":"De Matos, Damaris Analia","e":[258622,258706,260560,260737,261402,261598,261716],"c":{"258622":[0,0,0,0,0,0,0],"258706":[0,0,0,0,5,2,0],"260560":[0,0,0,0,3,0,0],"260737":[1,0,0,0,1,0,0],"261402":[0,0,0,0,0,0,0],"261598":[0,0,0,0,0,0,0],"261716":[0,4,3,0,0,0,0]},"m":[4,3,0,9,2,0],"a":46,"cd":62},{"n":"Del Negro, Gonzalo Martin","e":[260264,261328,262840,262845],"c":{"260264":[0,3,2,0,2,1,0],"261328":[0,2,1,0,1,0,0],"262840":[0,3,2,0,0,0,0],"262845":[1,0,0,0,1,0,0]},"m":[8,5,0,4,1,0],"a":16,"cd":62},{"n":"Desaloms, Maria Jose","e":[258681,258782,258812,260560,260661,260737,261379,261598,261665,261761],"c":{"258681":[0,0,0,0,6,3,0],"258782":[1,0,0,0,7,4,0],"258812":[0,0,0,0,0,0,0],"260560":[0,0,0,0,0,0,0],"260661":[1,0,0,0,1,0,0],"260737":[0,0,0,0,0,0,0],"261379":[0,0,0,0,4,4,0],"261598":[0,0,0,0,2,2,0],"261665":[0,0,0,0,4,3,0],"261761":[0,0,0,0,3,2,0]},"m":[0,0,0,27,18,0],"a":57,"cd":52},{"n":"Diaz Diaz, Arturo Javier","e":[259721,259812,260560,262381,262596],"c":{"259721":[0,2,1,0,0,0,0],"259812":[1,1,0,0,0,0,0],"260560":[0,0,0,0,2,0,0],"262381":[0,0,0,0,0,0,0],"262596":[0,5,5,1,0,0,0]},"m":[8,6,1,2,0,0],"a":46,"cd":62},{"n":"Diaz Lorenzo, Josefina","e":[262842],"c":{"262842":[1,0,0,0,1,1,0]},"m":[0,0,0,1,1,0],"a":11,"cd":62},{"n":"Dinatale, Silvia","e":[258812,259803,261379,261402,261716,262551],"c":{"258812":[1,0,0,0,5,1,0],"259803":[0,0,0,0,1,1,0],"261379":[1,0,0,0,2,2,0],"261402":[0,0,0,0,0,0,0],"261716":[0,0,0,0,0,0,0],"262551":[0,0,0,0,6,5,0]},"m":[0,0,0,14,9,0],"a":57,"cd":62},{"n":"Donati, Juan Pablo","e":[259109,259720,260560,260979,261909,262381],"c":{"259109":[1,0,0,0,1,0,0],"259720":[0,0,0,0,9,8,0],"260560":[0,0,0,0,0,0,0],"260979":[0,0,0,0,0,0,0],"261909":[0,0,0,0,5,3,0],"262381":[0,0,0,0,0,0,0]},"m":[0,0,0,15,11,0],"a":42,"cd":51},{"n":"Elizondo, Juan Francisco","e":[260979,262381],"c":{"260979":[0,0,0,0,0,0,0],"262381":[0,0,0,0,0,0,0]},"m":[0,0,0,0,0,0],"a":44,"cd":62},{"n":"Evangelista, Juan C","e":[259652,262435],"c":{"259652":[0,0,0,0,6,0,0],"262435":[0,0,0,0,0,0,0]},"m":[0,0,0,6,0,0],"a":84,"cd":56},{"n":"Fernandez Laporte, Rodrigo Manuel","e":[260265,262845],"c":{"260265":[0,0,0,0,0,0,0],"262845":[0,0,0,0,1,0,0]},"m":[0,0,0,1,0,0],"a":17,"cd":62},{"n":"Fernandez, Paglia Diego","e":[259109,259476,260560,260580,260979,261379,262093,262150,262381],"c":{"259109":[0,0,0,0,2,1,0],"259476":[0,0,0,0,5,2,1],"260560":[0,0,0,0,0,0,0],"260580":[1,0,0,0,4,4,0],"260979":[0,0,0,0,0,0,0],"261379":[0,0,0,0,6,6,0],"262093":[0,0,0,0,6,5,0],"262150":[0,0,0,0,5,3,0],"262381":[0,0,0,0,0,0,0]},"m":[0,0,0,28,21,1],"a":59,"cd":42},{"n":"Finkelstein, Fabiana Andrea","e":[259803,261716,262551],"c":{"259803":[0,2,1,0,3,0,0],"261716":[0,0,0,0,0,0,0],"262551":[0,2,1,0,1,0,0]},"m":[4,2,0,4,0,0],"a":59,"cd":62},{"n":"Fiora, Gael","e":[260264,261328,262840],"c":{"260264":[0,4,2,0,1,0,0],"261328":[0,3,2,0,0,0,0],"262840":[0,0,0,0,1,0,0]},"m":[7,4,0,2,0,0],"a":15,"cd":62},{"n":"Fiora, Tobias","e":[260266,260267,262843,263287],"c":{"260266":[0,0,0,0,1,0,0],"260267":[0,4,4,0,0,0,0],"262843":[0,4,4,0,0,0,0],"263287":[0,2,2,0,0,0,0]},"m":[10,10,0,1,0,0],"a":11,"cd":62},{"n":"Fittipaldi, Jorge","e":[259567,262545],"c":{"259567":[0,0,0,0,1,0,0],"262545":[0,0,0,0,0,0,0]},"m":[0,0,0,1,0,0],"a":64,"cd":62},{"n":"Forastiere, Pedro","e":[260264,261328,262840],"c":{"260264":[0,0,0,0,5,3,0],"261328":[0,1,0,0,1,0,0],"262840":[0,1,1,0,2,1,0]},"m":[2,1,0,8,4,0],"a":16,"cd":62},{"n":"Forastiere, Tiago","e":[258911,258937,260979],"c":{"258911":[1,1,0,0,0,0,0],"258937":[0,4,1,0,0,0,0],"260979":[0,1,0,0,0,0,0]},"m":[6,1,0,0,0,0],"a":20,"cd":56},{"n":"Formica, Marisa Armoa De","e":[259796,259803,261761,262438],"c":{"259796":[0,0,0,0,6,5,0],"259803":[0,0,0,0,1,0,0],"261761":[0,0,0,0,0,0,0],"262438":[0,0,0,0,4,4,0]},"m":[0,0,0,11,9,0],"a":68,"cd":53},{"n":"Fosati, Jeremias Leonardo Fosati","e":[259812],"c":{"259812":[0,0,0,0,0,0,0]},"m":[0,0,0,0,0,0],"a":19,"cd":62},{"n":"Franze, Santiago","e":[258912,258937,260979,262381],"c":{"258912":[1,0,0,0,1,0,0],"258937":[0,2,2,0,0,0,0],"260979":[0,0,0,0,0,0,0],"262381":[0,0,0,0,0,0,0]},"m":[2,2,0,1,0,0],"a":26,"cd":34},{"n":"Frencia, Susana Beatriz","e":[259796,262438],"c":{"259796":[0,0,0,0,6,0,0],"262438":[0,0,0,0,0,0,0]},"m":[0,0,0,6,0,0],"a":71,"cd":59},{"n":"Fucaraccio Gallegos, Josefina","e":[258681,258782,258812,260560,260661,260737,261379,261665,261761],"c":{"258681":[0,5,3,0,1,0,0],"258782":[1,6,4,0,0,0,0],"258812":[0,0,0,0,0,0,0],"260560":[0,0,0,0,0,0,0],"260661":[1,1,0,0,0,0,0],"260737":[0,1,1,0,0,0,0],"261379":[0,0,0,0,6,5,0],"261665":[0,0,0,0,0,0,0],"261761":[0,0,0,0,0,0,0]},"m":[13,8,0,7,5,0],"a":58,"cd":52},{"n":"Garcia Gregori, Estela Fiorentina","e":[259796],"c":{"259796":[0,0,0,0,2,1,0]},"m":[0,0,0,2,1,0],"a":69,"cd":62},{"n":"Gasparri, Diego Gabriel","e":[259109,259436,259476,260560,260580,260979,261379,261982,262150,262381],"c":{"259109":[0,0,0,0,4,0,0],"259436":[1,0,0,0,7,5,0],"259476":[0,0,0,0,2,0,0],"260560":[0,0,0,0,0,0,0],"260580":[1,0,0,0,1,1,0],"260979":[0,0,0,0,0,0,0],"261379":[0,0,0,0,4,3,0],"261982":[0,0,0,0,3,3,0],"262150":[0,0,0,0,5,3,0],"262381":[0,0,0,0,0,0,0]},"m":[0,0,0,26,15,0],"a":55,"cd":42},{"n":"Gasparri, Ramiro","e":[258912,260780,261392,262381],"c":{"258912":[0,6,4,0,2,2,0],"260780":[1,1,1,0,3,2,0],"261392":[0,5,2,0,0,0,0],"262381":[0,0,0,0,4,4,0]},"m":[12,7,0,9,8,0],"a":25,"cd":34},{"n":"Gayraud, Ariel Norberto","e":[259109,259720,260560,260979,261909,262093,262381],"c":{"259109":[1,0,0,0,1,0,0],"259720":[0,0,0,0,7,6,0],"260560":[0,0,0,0,1,0,0],"260979":[0,0,0,0,0,0,0],"261909":[0,0,0,0,5,2,0],"262093":[0,0,0,0,6,6,0],"262381":[0,0,0,0,0,0,0]},"m":[0,0,0,20,14,0],"a":49,"cd":51},{"n":"Giacchino, Ignacio Ramiro","e":[259476,259721,260560,261379,262596],"c":{"259476":[0,0,0,0,2,1,0],"259721":[0,0,0,0,0,0,0],"260560":[0,0,0,0,0,0,0],"261379":[0,0,0,0,2,1,0],"262596":[0,0,0,0,0,0,0]},"m":[0,0,0,4,2,0],"a":51,"cd":62},{"n":"Giaccio, Ana Victoria","e":[259796,259803,261716,262551],"c":{"259796":[0,0,0,0,6,0,0],"259803":[0,0,0,0,0,0,0],"261716":[0,0,0,0,0,0,0],"262551":[0,0,0,0,0,0,0]},"m":[0,0,0,6,0,0],"a":60,"cd":62},{"n":"Gonzalez, Exequiel","e":[259812,260979,262381],"c":{"259812":[0,0,0,0,5,2,0],"260979":[0,0,0,0,0,0,0],"262381":[0,0,0,0,1,1,0]},"m":[0,0,0,6,3,0],"a":26,"cd":54},{"n":"Hasda, Lucas Ezequiel","e":[258911,258937,260846,262381],"c":{"258911":[1,0,0,0,5,3,0],"258937":[0,0,0,0,1,0,0],"260846":[0,0,0,0,2,0,0],"262381":[0,0,0,0,3,3,0]},"m":[0,0,0,11,6,0],"a":27,"cd":34},{"n":"Hermida, Roberto","e":[259721,262596],"c":{"259721":[1,0,0,0,1,0,0],"262596":[1,0,0,0,2,0,0]},"m":[0,0,0,3,0,0],"a":51,"cd":62},{"n":"Iliev, Emiliano","e":[259109,259436,260580,260846,260979,261982],"c":{"259109":[0,0,0,0,2,1,0],"259436":[0,0,0,0,9,7,0],"260580":[0,0,0,0,7,7,0],"260846":[1,0,0,0,1,0,0],"260979":[0,0,0,0,0,0,0],"261982":[0,0,0,0,6,5,0]},"m":[0,0,0,25,20,0],"a":51,"cd":30},{"n":"Iliev, Lucia","e":[260263,261402,262841],"c":{"260263":[0,2,1,0,2,2,0],"261402":[0,2,2,0,2,1,0],"262841":[0,0,0,0,1,1,0]},"m":[4,3,0,5,4,0],"a":15,"cd":62},{"n":"Iliev, Tomas","e":[260265,261328,262845],"c":{"260265":[0,0,0,0,5,1,0],"261328":[1,0,0,0,3,0,0],"262845":[0,0,0,0,1,0,0]},"m":[0,0,0,9,1,0],"a":5,"cd":62},{"n":"Jaliffa, Natalia","e":[258622,258681,258706,258782,258812,259803,260560,260737,261379,261598,261665,261716],"c":{"258622":[0,0,0,0,2,0,0],"258681":[1,0,0,0,7,3,0],"258706":[0,0,0,0,0,0,0],"258782":[1,0,0,0,1,0,0],"258812":[1,3,3,0,0,0,0],"259803":[0,0,0,0,0,0,0],"260560":[0,0,0,0,0,0,0],"260737":[0,3,1,0,0,0,0],"261379":[0,0,0,0,3,3,0],"261598":[0,0,0,0,1,1,0],"261665":[1,5,3,0,0,0,0],"261716":[0,1,1,0,0,0,0]},"m":[12,8,0,14,7,0],"a":50,"cd":58},{"n":"Lareo, Alejandro Carlos","e":[259109,259436,259476,259567,260979,262150,262381],"c":{"259109":[0,1,0,0,0,0,0],"259436":[1,1,0,0,0,0,0],"259476":[0,0,0,0,2,1,1],"259567":[0,1,1,0,7,7,0],"260979":[0,0,0,0,0,0,0],"262150":[0,0,0,0,5,5,0],"262381":[0,0,0,0,0,0,0]},"m":[3,1,0,14,13,1],"a":61,"cd":35},{"n":"Lareo, Nicolás","e":[262596],"c":{"262596":[1,0,0,0,2,1,0]},"m":[0,0,0,2,1,0],"a":48,"cd":62},{"n":"Lasarte, Mariana","e":[258706,258812,259803,260737,261379,261402,261716,262551],"c":{"258706":[1,0,0,0,1,0,0],"258812":[1,0,0,0,3,0,0],"259803":[0,0,0,0,2,2,0],"260737":[1,0,0,0,1,0,0],"261379":[1,0,0,0,1,1,0],"261402":[0,0,0,0,0,0,0],"261716":[0,0,0,0,1,1,0],"262551":[0,0,0,0,5,2,0]},"m":[0,0,0,14,6,0],"a":56,"cd":62},{"n":"Lebricon, Mercedes","e":[258622,260737,261402,261598],"c":{"258622":[0,1,1,0,5,3,0],"260737":[1,4,3,0,0,0,0],"261402":[0,0,0,0,0,0,0],"261598":[0,5,4,0,1,0,0]},"m":[10,8,0,6,3,0],"a":39,"cd":62},{"n":"Linares, Martin Ignacio","e":[258937,260846,262381],"c":{"258937":[0,1,1,0,2,1,0],"260846":[0,0,0,0,0,0,0],"262381":[0,0,0,0,0,0,0]},"m":[1,1,0,2,1,0],"a":26,"cd":34},{"n":"Liz, Gabriela","e":[258681,258782,258837,260560,260580,260661,260737,261379,261665,261761],"c":{"258681":[0,0,0,0,3,0,0],"258782":[0,0,0,0,4,2,0],"258837":[0,0,0,0,4,0,0],"260560":[0,0,0,0,0,0,0],"260580":[1,0,0,0,6,5,0],"260661":[1,0,0,0,3,2,0],"260737":[0,0,0,0,0,0,0],"261379":[0,0,0,0,0,0,0],"261665":[0,0,0,0,4,4,0],"261761":[0,1,1,0,4,4,0]},"m":[1,1,0,28,17,0],"a":65,"cd":52},{"n":"Lobalzo Garcia, Agustin","e":[260264,262840],"c":{"260264":[0,0,0,0,0,0,0],"262840":[0,0,0,0,0,0,0]},"m":[0,0,0,0,0,0],"a":16,"cd":62},{"n":"Loncaric, Cintia Elizabeth","e":[259803,261716,262551],"c":{"259803":[0,4,1,0,2,1,0],"261716":[0,0,0,0,0,0,0],"262551":[0,3,0,0,0,0,0]},"m":[7,1,0,2,1,0],"a":58,"cd":62},{"n":"Lopez Chiapero, Pablo","e":[259721,260560,262596],"c":{"259721":[0,0,0,0,4,1,0],"260560":[0,0,0,0,3,0,0],"262596":[0,0,0,0,5,2,1]},"m":[0,0,0,12,3,1],"a":47,"cd":62},{"n":"Lopez Delgado, Marina Edith","e":[259803],"c":{"259803":[0,0,0,0,0,0,0]},"m":[0,0,0,0,0,0],"a":57,"cd":62},{"n":"Lopez Rojas, Ignacio","e":[258911,258937,260846,260979,262381],"c":{"258911":[1,0,0,0,2,1,0],"258937":[0,1,0,0,4,1,0],"260846":[1,1,0,0,3,0,0],"260979":[0,3,1,0,2,2,0],"262381":[0,0,0,0,5,4,0]},"m":[5,1,0,16,8,0],"a":25,"cd":34},{"n":"Lopez, Luciana Beatriz","e":[258622,258706,260560,261402,261598,261716],"c":{"258622":[0,0,0,0,2,1,0],"258706":[0,0,0,0,3,1,0],"260560":[0,0,0,0,2,1,0],"261402":[0,0,0,0,0,0,0],"261598":[0,0,0,0,0,0,0],"261716":[0,1,0,0,5,2,0]},"m":[1,0,0,12,5,0],"a":49,"cd":62},{"n":"Lopez, Soledad Ana","e":[258622,258706,260560,260737,261402,261598],"c":{"258622":[0,1,0,0,6,4,0],"258706":[0,3,1,0,3,2,0],"260560":[0,0,0,0,3,1,0],"260737":[1,0,0,0,4,1,0],"261402":[0,0,0,0,0,0,0],"261598":[0,0,0,0,6,5,0]},"m":[4,1,0,22,13,0],"a":41,"cd":62},{"n":"Lorenzo, Dolores","e":[258622,258681,258706,260560,260737,261402,261598],"c":{"258622":[0,0,0,0,6,3,0],"258681":[1,1,0,0,0,0,0],"258706":[0,0,0,0,5,2,0],"260560":[0,0,0,0,4,2,0],"260737":[1,1,1,0,1,0,0],"261402":[0,0,0,0,0,0,0],"261598":[0,0,0,0,6,5,0]},"m":[2,1,0,22,12,0],"a":44,"cd":62},{"n":"Lorenzo, Francisco","e":[259109,259720,260560,260979,261909,262381],"c":{"259109":[1,1,0,0,1,0,0],"259720":[0,1,1,0,5,2,0],"260560":[0,0,0,0,2,0,0],"260979":[0,0,0,0,0,0,0],"261909":[0,0,0,0,4,2,0],"262381":[0,0,0,0,0,0,0]},"m":[2,1,0,12,4,0],"a":42,"cd":56},{"n":"Lorenzo, Romanyach Marian","e":[259796,262438],"c":{"259796":[0,0,0,0,5,2,0],"262438":[0,0,0,0,0,0,0]},"m":[0,0,0,5,2,0],"a":73,"cd":53},{"n":"Maggio, Agustin","e":[258911,260846,261392],"c":{"258911":[0,6,1,0,0,0,0],"260846":[0,3,1,0,0,0,0],"261392":[1,1,0,0,0,0,0]},"m":[10,2,0,0,0,0],"a":19,"cd":34},{"n":"Maiorana, Gabriela","e":[258706,258812,259803,261379,261402,261716,262551],"c":{"258706":[1,0,0,0,1,0,0],"258812":[1,0,0,0,4,2,0],"259803":[0,0,0,0,2,1,0],"261379":[1,0,0,0,1,0,0],"261402":[0,0,0,0,0,0,0],"261716":[0,0,0,0,0,0,0],"262551":[0,0,0,0,6,6,0]},"m":[0,0,0,14,9,0],"a":58,"cd":62},{"n":"Mammana, Natalia Paola","e":[258622,258706,260560,261402,261598,261716],"c":{"258622":[0,0,0,0,2,2,0],"258706":[0,0,0,0,4,1,0],"260560":[0,0,0,0,1,0,0],"261402":[0,0,0,0,0,0,0],"261598":[0,0,0,0,0,0,0],"261716":[0,0,0,0,6,3,0]},"m":[0,0,0,13,6,0],"a":47,"cd":62},{"n":"Mancuso Vignau, Tomas","e":[260264,261328,262840],"c":{"260264":[0,4,2,0,0,0,0],"261328":[0,2,1,0,0,0,0],"262840":[0,1,0,0,1,0,0]},"m":[7,3,0,1,0,0],"a":15,"cd":62},{"n":"Marchetti, Lucio","e":[260267,262843,263287],"c":{"260267":[0,1,1,0,3,1,0],"262843":[0,0,0,0,4,3,0],"263287":[1,0,0,0,1,0,0]},"m":[1,1,0,8,4,0],"a":12,"cd":62},{"n":"Marino, Franco","e":[260266,260267,262843,263287],"c":{"260266":[0,0,0,0,0,0,0],"260267":[0,3,3,0,0,0,0],"262843":[0,4,4,0,0,0,0],"263287":[0,0,0,0,1,1,0]},"m":[7,7,0,1,1,0],"a":12,"cd":62},{"n":"Marino, Juan Cruz","e":[260266,261328,263287],"c":{"260266":[0,4,1,0,0,0,0],"261328":[1,1,0,0,0,0,0],"263287":[0,2,2,0,0,0,0]},"m":[7,3,0,0,0,0],"a":14,"cd":62},{"n":"Martinez, Chabela","e":[260263,261402,262841],"c":{"260263":[0,0,0,0,0,0,0],"261402":[0,0,0,0,0,0,0],"262841":[0,0,0,0,0,0,0]},"m":[0,0,0,0,0,0],"a":17,"cd":62},{"n":"Martinez, Silvia Alejan","e":[258782,258837,260580,260661,261379,261665,261761,262438],"c":{"258782":[0,0,0,0,3,3,0],"258837":[0,0,0,0,4,2,0],"260580":[1,0,0,0,5,5,0],"260661":[0,0,0,0,2,1,0],"261379":[0,0,0,0,0,0,0],"261665":[0,0,0,0,3,1,0],"261761":[0,0,0,0,4,3,0],"262438":[0,0,0,0,6,6,0]},"m":[0,0,0,27,21,0],"a":65,"cd":52},{"n":"Martino, Leandro","e":[259109],"c":{"259109":[0,0,0,0,0,0,0]},"m":[0,0,0,0,0,0],"a":56,"cd":43},{"n":"Mateucci, Maximo Valentino","e":[260265,262845],"c":{"260265":[0,1,1,0,0,0,0],"262845":[0,2,1,0,0,0,0]},"m":[3,2,0,0,0,0],"a":17,"cd":62},{"n":"Mattivi, Delia Beatriz","e":[259796,262438],"c":{"259796":[0,0,0,0,0,0,0],"262438":[0,0,0,0,0,0,0]},"m":[0,0,0,0,0,0],"a":70,"cd":58},{"n":"Memini, Maria","e":[259803],"c":{"259803":[0,0,0,0,0,0,0]},"m":[0,0,0,0,0,0],"a":4,"cd":62},{"n":"Mendez, Ana Maria De","e":[259796],"c":{"259796":[0,0,0,0,2,0,0]},"m":[0,0,0,2,0,0],"a":81,"cd":58},{"n":"Menini, Carolina Maria","e":[258681,258812,258837,259796,259803,260737,261379,261665,262551],"c":{"258681":[0,0,0,0,0,0,0],"258812":[1,0,0,0,2,2,0],"258837":[1,0,0,0,2,0,0],"259796":[0,0,0,0,4,1,0],"259803":[0,0,0,0,0,0,0],"260737":[0,0,0,0,0,0,0],"261379":[0,0,0,0,0,0,0],"261665":[0,0,0,0,0,0,0],"262551":[0,1,0,0,4,2,0]},"m":[1,0,0,12,5,0],"a":61,"cd":53},{"n":"Molina, Malena","e":[261402],"c":{"261402":[0,0,0,0,0,0,0]},"m":[0,0,0,0,0,0],"a":17,"cd":62},{"n":"Molinari, Bruno","e":[262596],"c":{"262596":[0,0,0,0,4,3,1]},"m":[0,0,0,4,3,1],"a":48,"cd":62},{"n":"Molinari, Martina","e":[260263,261402,262841],"c":{"260263":[0,6,5,1,0,0,0],"261402":[0,1,0,0,3,2,0],"262841":[0,1,0,0,0,0,0]},"m":[8,5,1,3,2,0],"a":16,"cd":62},{"n":"Mondino, Alejandro","e":[262596],"c":{"262596":[1,0,0,0,1,0,0]},"m":[0,0,0,1,0,0],"a":49,"cd":null},{"n":"Moreale Ernst, Olivia","e":[260263,261402,262841],"c":{"260263":[0,5,4,0,0,0,0],"261402":[0,3,1,0,1,0,0],"262841":[0,4,2,0,0,0,0]},"m":[12,7,0,1,0,0],"a":16,"cd":62},{"n":"Moreale Ernst, Santiago","e":[258937,259812,260846,260979],"c":{"258937":[1,0,0,0,2,1,0],"259812":[0,1,0,0,4,2,0],"260846":[1,0,0,0,1,0,0],"260979":[0,0,0,0,5,3,0]},"m":[1,0,0,12,6,0],"a":24,"cd":34},{"n":"Moretti, Hector","e":[259109,259436,260580,260979,261982],"c":{"259109":[0,0,0,0,1,1,0],"259436":[0,0,0,0,6,4,0],"260580":[0,0,0,0,3,2,0],"260979":[0,0,0,0,0,0,0],"261982":[0,0,0,0,4,3,0]},"m":[0,0,0,14,10,0],"a":53,"cd":30},{"n":"Mures Blanco, Lucas Abel","e":[258937,259812,260979,262381],"c":{"258937":[1,1,1,0,1,0,0],"259812":[0,4,1,0,2,2,0],"260979":[0,2,1,0,4,0,0],"262381":[0,0,0,0,2,1,0]},"m":[7,3,0,9,3,0],"a":25,"cd":56},{"n":"Mures Blanco, Mariano","e":[258937],"c":{"258937":[1,0,0,0,0,0,0]},"m":[0,0,0,0,0,0],"a":51,"cd":62},{"n":"Naya, Pedro","e":[260266,263287],"c":{"260266":[0,0,0,0,3,0,0],"263287":[0,0,0,0,3,2,0]},"m":[0,0,0,6,2,0],"a":13,"cd":62},{"n":"Newman, Elizabeth","e":[258812,258837,260737,261379,261665,261761,262438],"c":{"258812":[0,1,1,0,1,0,0],"258837":[0,0,0,0,4,2,0],"260737":[0,1,0,0,0,0,0],"261379":[0,0,0,0,0,0,0],"261665":[0,0,0,0,0,0,0],"261761":[0,1,1,0,2,2,0],"262438":[0,0,0,0,6,6,0]},"m":[3,2,0,13,10,0],"a":65,"cd":53},{"n":"Nogueira, Daniel Jorge","e":[259567,262435],"c":{"259567":[0,0,0,0,0,0,0],"262435":[0,0,0,0,7,5,0]},"m":[0,0,0,7,5,0],"a":66,"cd":49},{"n":"Orsetti, Alejandro Diego","e":[259109,259436,259476,259720,260560,260979,261379,261982,262093,262381,262545],"c":{"259109":[1,2,0,0,0,0,0],"259436":[1,2,1,0,0,0,0],"259476":[0,6,3,1,0,0,0],"259720":[0,0,0,0,0,0,0],"260560":[0,0,0,0,0,0,0],"260979":[0,0,0,0,0,0,0],"261379":[0,0,0,0,4,4,0],"261982":[1,1,0,0,0,0,0],"262093":[0,0,0,0,0,0,0],"262381":[0,0,0,0,0,0,0],"262545":[0,0,0,0,0,0,0]},"m":[11,4,1,4,4,0],"a":56,"cd":59},{"n":"Paez, Carlos","e":[262596],"c":{"262596":[1,0,0,0,2,2,0]},"m":[0,0,0,2,2,0],"a":45,"cd":null},{"n":"Panessa, Franco","e":[258911,258937,260846,261392,262381],"c":{"258911":[1,5,1,0,0,0,0],"258937":[0,3,1,0,0,0,0],"260846":[0,6,2,0,0,0,0],"261392":[1,2,1,0,0,0,0],"262381":[0,5,3,0,0,0,0]},"m":[21,8,0,0,0,0],"a":26,"cd":34},{"n":"Peino, Maria Cecilia","e":[258622,258681,258782,260560,260580,260661,261598,261665],"c":{"258622":[0,0,0,0,2,2,0],"258681":[0,0,0,0,8,6,0],"258782":[0,1,0,0,4,3,0],"260560":[0,0,0,0,0,0,0],"260580":[0,0,0,0,6,5,0],"260661":[0,2,0,0,2,2,0],"261598":[0,0,0,0,5,4,0],"261665":[0,0,0,0,5,5,0]},"m":[3,0,0,32,27,0],"a":53,"cd":52},{"n":"Peralta, Augusto","e":[258912,258937,261392],"c":{"258912":[1,1,1,0,6,4,0],"258937":[0,2,1,0,2,1,0],"261392":[0,3,0,0,3,1,0]},"m":[6,2,0,11,6,0],"a":22,"cd":34},{"n":"Peralta, Dario Hernan","e":[259476,259721,261379,262093,262545],"c":{"259476":[0,0,0,0,4,0,0],"259721":[0,1,0,0,0,0,0],"261379":[0,0,0,0,0,0,0],"262093":[0,1,0,0,3,3,0],"262545":[0,0,0,0,5,4,1]},"m":[2,0,0,12,7,1],"a":55,"cd":59},{"n":"Peralta, Lola","e":[260737,261402],"c":{"260737":[1,1,0,0,1,0,0],"261402":[0,5,2,0,0,0,0]},"m":[6,2,0,1,0,0],"a":19,"cd":62},{"n":"Perez De Gracia, Lucas","e":[258911,260780,261392],"c":{"258911":[0,0,0,0,2,1,0],"260780":[1,0,0,0,1,0,0],"261392":[0,1,0,0,4,2,0]},"m":[1,0,0,7,3,0],"a":23,"cd":34},{"n":"Pinotti, Milena","e":[260263,262841,262842],"c":{"260263":[1,1,1,1,0,0,0],"262841":[1,2,1,0,0,0,0],"262842":[0,4,4,0,1,0,0]},"m":[7,6,1,1,0,0],"a":12,"cd":62},{"n":"Piñero, Julio Cesar","e":[259652,262435],"c":{"259652":[0,0,0,0,6,3,0],"262435":[0,0,0,0,1,0,0]},"m":[0,0,0,7,3,0],"a":71,"cd":58},{"n":"Poberaj, Federico","e":[259109,259721,260560,262596],"c":{"259109":[1,1,0,0,0,0,0],"259721":[0,3,2,0,0,0,0],"260560":[0,0,0,0,0,0,0],"262596":[0,1,0,0,0,0,0]},"m":[5,2,0,0,0,0],"a":48,"cd":62},{"n":"Poggi, Gabriel","e":[259721,260560,262596],"c":{"259721":[0,0,0,0,3,0,0],"260560":[0,0,0,0,1,0,0],"262596":[0,0,0,0,0,0,0]},"m":[0,0,0,4,0,0],"a":48,"cd":62},{"n":"Precioso, Pablo","e":[259721,262596],"c":{"259721":[1,0,0,0,5,1,0],"262596":[0,0,0,0,5,3,1]},"m":[0,0,0,10,4,1],"a":46,"cd":62},{"n":"Presa, Jorge Daniel","e":[259652,262435],"c":{"259652":[0,0,0,0,2,0,0],"262435":[0,0,0,0,0,0,0]},"m":[0,0,0,2,0,0],"a":74,"cd":53},{"n":"Presa, Juan Cruz","e":[259721,260560,261909],"c":{"259721":[0,1,0,0,5,1,0],"260560":[0,0,0,0,2,1,0],"261909":[0,0,0,0,0,0,0]},"m":[1,0,0,7,2,0],"a":44,"cd":62},{"n":"Pupato, Jorge Oscar","e":[259652,262435],"c":{"259652":[0,5,5,0,0,0,0],"262435":[0,2,0,0,5,4,0]},"m":[7,5,0,5,4,0],"a":73,"cd":49},{"n":"Pupato, Susana Rosa Gonza","e":[258837,259796,262438],"c":{"258837":[1,0,0,0,4,1,0],"259796":[0,0,0,0,1,1,0],"262438":[0,0,0,0,5,5,0]},"m":[0,0,0,10,7,0],"a":75,"cd":53},{"n":"Quirolo, Sergio","e":[259436,259476,259567,261379,262545],"c":{"259436":[1,0,0,0,1,0,0],"259476":[0,0,0,0,1,0,0],"259567":[0,0,0,0,0,0,0],"261379":[0,0,0,0,0,0,0],"262545":[0,0,0,0,1,1,0]},"m":[0,0,0,3,1,0],"a":60,"cd":54},{"n":"Rago, Hilda Mabel","e":[259796,259803,262438],"c":{"259796":[0,0,0,0,4,3,0],"259803":[0,0,0,0,1,0,0],"262438":[0,0,0,0,0,0,0]},"m":[0,0,0,5,3,0],"a":71,"cd":53},{"n":"Roca, Marcelo","e":[259109,259436,260580,260979,261379,261982,262381],"c":{"259109":[0,0,0,0,2,1,0],"259436":[0,0,0,0,8,7,0],"260580":[1,0,0,0,1,1,0],"260979":[0,0,0,0,0,0,0],"261379":[0,0,0,0,0,0,0],"261982":[0,0,0,0,5,5,0],"262381":[0,0,0,0,0,0,0]},"m":[0,0,0,16,14,0],"a":52,"cd":35},{"n":"Rodriguez Piceda, Gustavo","e":[262435],"c":{"262435":[0,1,0,0,1,0,0]},"m":[1,0,0,1,0,0],"a":65,"cd":56},{"n":"Rodriguez, Haydee Carmen","e":[259796],"c":{"259796":[1,0,0,0,2,0,0]},"m":[0,0,0,2,0,0],"a":77,"cd":62},{"n":"Rodriguez, Santiago","e":[259720,260560,260979,261909,261982,262093,262381],"c":{"259720":[0,9,7,0,0,0,0],"260560":[0,0,0,0,0,0,0],"260979":[0,0,0,0,0,0,0],"261909":[0,5,3,0,0,0,0],"261982":[1,3,1,0,0,0,0],"262093":[0,4,4,0,0,0,0],"262381":[0,0,0,0,0,0,0]},"m":[21,15,0,0,0,0],"a":45,"cd":56},{"n":"Rodriguez, Vosa Guillermo","e":[259109,259436,259476,259567,260979,261379,262150,262381],"c":{"259109":[0,0,0,0,1,0,0],"259436":[1,1,0,0,0,0,0],"259476":[0,0,0,0,1,0,0],"259567":[0,5,4,0,4,4,0],"260979":[0,0,0,0,0,0,0],"261379":[0,0,0,0,4,4,0],"262150":[0,4,1,0,0,0,0],"262381":[0,0,0,0,0,0,0]},"m":[10,5,0,10,8,0],"a":60,"cd":35},{"n":"Romaní, Bautista","e":[258912,258937,260979],"c":{"258912":[1,0,0,0,1,1,0],"258937":[0,0,0,0,2,2,0],"260979":[0,0,0,0,3,1,0]},"m":[0,0,0,6,4,0],"a":22,"cd":34},{"n":"Russo, Santiago Jose","e":[260780],"c":{"260780":[0,0,0,0,0,0,0]},"m":[0,0,0,0,0,0],"a":26,"cd":18},{"n":"Sabelli, Baltasar Luis","e":[260264,260979,261328,262840,262845],"c":{"260264":[0,3,0,0,1,1,0],"260979":[1,1,0,0,0,0,0],"261328":[0,3,1,0,0,0,0],"262840":[0,1,0,0,0,0,0],"262845":[1,1,1,0,0,0,0]},"m":[9,2,0,1,1,0],"a":16,"cd":62},{"n":"Sanguinetti, Gabriela Viviana","e":[259803,261716,262551],"c":{"259803":[0,0,0,0,4,2,0],"261716":[0,0,0,0,0,0,0],"262551":[0,0,0,0,1,1,0]},"m":[0,0,0,5,3,0],"a":55,"cd":62},{"n":"Saucedo, Santiago","e":[260264,261328,262840],"c":{"260264":[0,0,0,0,5,3,0],"261328":[0,0,0,0,2,0,0],"262840":[0,0,0,0,2,1,0]},"m":[0,0,0,9,4,0],"a":16,"cd":62},{"n":"Scarlato, Federico Gaston","e":[259109,259436,260560,260580,260979,261982],"c":{"259109":[0,0,0,0,2,0,0],"259436":[0,5,5,0,3,1,0],"260560":[0,0,0,0,0,0,0],"260580":[0,0,0,0,8,6,0],"260979":[0,0,0,0,0,0,0],"261982":[0,0,0,0,6,4,0]},"m":[5,5,0,19,11,0],"a":54,"cd":30},{"n":"Schifino, Miguel Antonio","e":[259652],"c":{"259652":[0,0,0,0,0,0,0]},"m":[0,0,0,0,0,0],"a":82,"cd":57},{"n":"Schlussler, Martin Bautista","e":[260267,262843],"c":{"260267":[0,0,0,0,3,1,0],"262843":[0,0,0,0,1,1,0]},"m":[0,0,0,4,2,0],"a":11,"cd":62},{"n":"Siburo, Diana","e":[259803,261716,262551],"c":{"259803":[0,0,0,0,5,2,0],"261716":[0,0,0,0,0,0,0],"262551":[0,0,0,0,1,0,0]},"m":[0,0,0,6,2,0],"a":56,"cd":62},{"n":"Sinamon, Brian","e":[259720,260979,261909,262093,262381],"c":{"259720":[0,0,0,0,8,7,0],"260979":[0,0,0,0,0,0,0],"261909":[0,0,0,0,3,3,0],"262093":[0,1,1,0,4,3,0],"262381":[0,0,0,0,0,0,0]},"m":[1,1,0,15,13,0],"a":45,"cd":56},{"n":"Sinamon, Sophie","e":[262842],"c":{"262842":[0,2,0,0,4,3,0]},"m":[2,0,0,4,3,0],"a":12,"cd":62},{"n":"Suarez Nanni, Benito","e":[260267,262843,263287],"c":{"260267":[0,0,0,0,2,0,0],"262843":[0,0,0,0,3,2,0],"263287":[1,0,0,0,1,0,0]},"m":[0,0,0,6,2,0],"a":11,"cd":62},{"n":"Suarez, Carlos Alberto","e":[259567,262435,262545],"c":{"259567":[0,0,0,0,6,6,0],"262435":[0,0,0,0,7,6,0],"262545":[0,0,0,0,4,3,1]},"m":[0,0,0,17,15,1],"a":66,"cd":49},{"n":"Tarricone, Diego","e":[259721,260560,261909,262381],"c":{"259721":[0,0,0,0,7,1,0],"260560":[0,0,0,0,2,0,0],"261909":[0,0,0,0,1,0,0],"262381":[0,0,0,0,0,0,0]},"m":[0,0,0,10,1,0],"a":40,"cd":62},{"n":"Valente, Rocco","e":[258912,260780],"c":{"258912":[0,1,1,0,0,0,0],"260780":[0,4,2,0,0,0,0]},"m":[5,3,0,0,0,0],"a":22,"cd":17},{"n":"Ventola, Francisca","e":[260263,261402,262841,262842],"c":{"260263":[1,1,1,1,0,0,0],"261402":[0,0,0,0,1,1,0],"262841":[1,3,3,0,1,1,0],"262842":[0,3,2,0,0,0,0]},"m":[7,6,1,2,2,0],"a":12,"cd":62},{"n":"Vittori, Leandro","e":[259720,260560,260979,261909,262093,262381],"c":{"259720":[0,0,0,0,10,8,0],"260560":[0,0,0,0,2,2,0],"260979":[0,0,0,0,0,0,0],"261909":[0,0,0,0,2,0,0],"262093":[0,0,0,0,5,5,0],"262381":[0,0,0,0,0,0,0]},"m":[0,0,0,19,15,0],"a":47,"cd":56},{"n":"Wiurnos, Maria Cecilia","e":[258812,258837,260737,261379,262438],"c":{"258812":[0,0,0,0,1,0,0],"258837":[0,0,0,0,6,1,0],"260737":[0,0,0,0,0,0,0],"261379":[0,0,0,0,0,0,0],"262438":[0,0,0,0,7,7,0]},"m":[0,0,0,14,8,0],"a":66,"cd":53}]};
+var T = DATA.teams, P = DATA.players;
+var FECHA = '13/11/2026', URL_PAGINA = 'https://claude.ai/artifact/RuLqvgQdVN2tB4Hp5RNDSU';
+document.getElementById('asof').textContent = 'Datos de deportivoaat.com.ar al '+FECHA+'.';
+var TORNEOS = ['Interclub por edad (1er cuat.)','Interclub Mayores (agosto)','Libres','Mixto mayores','Menores 1ª etapa','Menores 2ª etapa'];
+var ORD_R = ['Damas','Caballeros','Mixto','Niñas','Varones'];
+var ORD_N = ['Primera','Intermedia','Segunda','Tercera','Cuarta','Quinta','Sexta','Nivel A','Nivel B','Nivel C'];
+var ABBR = {Caballeros:'Cab.',Damas:'Dam.',Mixto:'Mix.','Niñas':'Niñas',Varones:'Var.'};
+var GROUPS = [['torneo','Torneo'],['rama','Rama'],['edad','Edad / categoría'],['nivel','Nivel'],['letra','Equipo']];
+
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function norm(s){return String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();}
+function edadKey(e){ if(e==='Libres') return 0; var m=e.match(/\d+/); return (e.indexOf('Sub')===0?0:100)+(m?+m[0]:0); }
+
+T.forEach(function(t){ t.ti = TORNEOS.indexOf(t.torneo); });
+T.sort(function(a,b){
+  return a.ti-b.ti || ORD_R.indexOf(a.rama)-ORD_R.indexOf(b.rama) || edadKey(a.edad)-edadKey(b.edad) ||
+         ORD_N.indexOf(a.nivel)-ORD_N.indexOf(b.nivel) || a.letra.localeCompare(b.letra);
+});
+var rank = {}; T.forEach(function(t,i){ rank[t.id]=i; });
+var tById = {}; T.forEach(function(t){ tById[t.id]=t; });
+P.forEach(function(p,i){
+  p.i=i; p.k=norm(p.n); p.e.sort(function(a,b){return rank[a]-rank[b];});
+  var m=p.m||[0,0,0,0,0,0];
+  p.st={sn:m[0],sg:m[1],swo:m[2],dn:m[3],dg:m[4],dwo:m[5]};
+  p.st.n=p.st.sn+p.st.dn; p.st.g=p.st.sg+p.st.dg; p.st.l=p.st.n-p.st.g; p.st.wo=p.st.swo+p.st.dwo;
+  p.st.pct = p.st.n ? Math.round(100*p.st.g/p.st.n) : null;
+});
+
+function base(t){
+  if(t.edad==='Libres') return 'Libres '+t.rama;
+  if(t.edad.indexOf('Sub')===0) return t.edad+' '+t.rama;
+  return t.rama+' '+t.edad;
+}
+function label(t){ return base(t)+' · '+t.nivel+' · '+t.letra; }
+function short(t){
+  var b = t.edad==='Libres' ? 'Libres '+ABBR[t.rama] : (t.edad.indexOf('Sub')===0 ? t.edad+' '+ABBR[t.rama] : ABBR[t.rama]+' '+t.edad);
+  var n = t.nivel==='Intermedia' ? 'Interm.' : t.nivel.replace('Nivel ','Niv. ');
+  return b+' · '+n+(t.letra!=='A' ? ' '+t.letra : '');
+}
+
+var F = {q:'',min:1,minp:0,part:'',torneo:{},rama:{},edad:{},nivel:{},letra:{}};
+function ageTxt(p){ return p.a==null ? '–' : String(p.a); }
+function pctTxt(st){ return st.pct===null ? '–' : st.pct+'%'; }
+// c[id] = [agregado, ind, ind ganados, ind WO, dobles, dobles ganados, dobles WO]; "jugó" = al menos un partido sin WO en ese equipo
+function tinfo(p,id){ var c=p.c[id]; var n=c[1]+c[4], real=n-c[3]-c[6]; return {ag:!!c[0], n:n, real:real, played:real>0, wo:c[3]+c[6]}; }
+function partOk(p,id){
+  if(!F.part) return true; var x=tinfo(p,id);
+  return F.part==='jugo' ? x.played : F.part==='nojugo' ? !x.played : F.part==='ag' ? x.ag : !x.ag;
+}
+function marks(p,id,age){
+  var x=tinfo(p,id), h='';
+  if(x.ag) h+='<span class="mk ag" title="Agregado a la lista de buena fe">Agregado</span> ';
+  h+= x.played ? '<span class="mk pj" title="Partidos jugados en este equipo">'+x.real+' pj</span>' : '<span class="mk nj" title="'+(x.wo?'Solo figura con WO en este equipo':'Sin partidos en este equipo')+'">No jugó</span>';
+  if(age && p.a!=null) h+=' <span class="mk pj" title="Edad según la AAT">· '+p.a+' a</span>';
+  return h;
+}
+function marksTxt(p,id){ var x=tinfo(p,id); return (x.ag?' [agregado]':'')+(x.played?' ['+x.real+' pj]':' [no jugó]'); }
+var ui = {tab:'matriz', sort:'name', all:false, detail:null, col:'', dir:1};
+
+function values(k){
+  var seen={}, out=[];
+  T.forEach(function(t){ if(!seen[t[k]]){seen[t[k]]=1; out.push({v:t[k],ti:t.ti});} });
+  return out;
+}
+function buildGroups(){
+  var html='';
+  GROUPS.forEach(function(g){
+    var k=g[0];
+    html += '<div class="frow"><div class="flabel">'+g[1]+'</div><div class="chips">';
+    values(k).forEach(function(o){
+      var n = T.filter(function(t){return t[k]===o.v;}).length;
+      html += '<button type="button" class="chip '+(k==='torneo'?'t'+o.ti:'')+'" data-k="'+k+'" data-v="'+esc(o.v)+'" aria-pressed="false">'+(k==='torneo'?'<i class="sw"></i>':'')+esc(o.v)+' <small>'+n+'</small></button>';
+    });
+    html += '</div></div>';
+  });
+  document.getElementById('groups').innerHTML = html;
+  document.getElementById('legend').innerHTML = TORNEOS.map(function(n,i){return '<span class="t'+i+'"><i></i>'+esc(n)+'</span>';}).join('') + '<span class="lg"><b></b>Jugó</span><span class="lg"><b class="h"></b>No jugó</span><span class="lg"><b class="a">A</b>Agregado</span>';
+}
+// orden de valores de los chips
+(function(){
+  var orders = {edad:function(a,b){return edadKey(a.v)-edadKey(b.v);}, nivel:function(a,b){return ORD_N.indexOf(a.v)-ORD_N.indexOf(b.v);}, rama:function(a,b){return ORD_R.indexOf(a.v)-ORD_R.indexOf(b.v);}};
+  var orig = values;
+  values = function(k){ var v=orig(k); if(orders[k]) v.sort(orders[k]); else if(k==='letra') v.sort(function(a,b){return a.v.localeCompare(b.v);}); return v; };
+})();
+
+function teamOk(t){
+  for(var i=0;i<GROUPS.length;i++){ var k=GROUPS[i][0]; var s=F[k]; if(Object.keys(s).length && !s[t[k]]) return false; }
+  return true;
+}
+function compute(){
+  var okTeams = T.filter(teamOk), ok = {};
+  okTeams.forEach(function(t){ok[t.id]=1;});
+  var nq = norm(F.q.trim());
+  var players = [];
+  P.forEach(function(p){
+    var m = p.e.filter(function(id){return ok[id] && partOk(p,id);});
+    if(!m.length || m.length<F.min) return;
+    if(p.st.n<F.minp) return;
+    if(nq && p.k.indexOf(nq)<0) return;
+    players.push({p:p, m:m, ms:m.reduce(function(o,id){o[id]=1;return o;},{})});
+  });
+  var byName = function(a,b){return a.p.n.localeCompare(b.p.n,'es');};
+  players.sort(ui.sort==='count' ? function(a,b){return b.m.length-a.m.length || byName(a,b);} :
+               ui.sort==='matches' ? function(a,b){return b.p.st.n-a.p.st.n || byName(a,b);} : byName);
+  if(ui.col){
+    var cnt = function(x){ return (ui.all && ui.tab==='listado' ? x.p.e : x.m).length; };
+    var val = {name:function(x){return x.p.n;}, eq:cnt, pj:function(x){return x.p.st.n;}, ind:function(x){return x.p.st.sn*1000+x.p.st.dn;},
+               g:function(x){return x.p.st.g;}, l:function(x){return x.p.st.l;}, pct:function(x){return x.p.st.pct;}, age:function(x){return x.p.a==null?null:x.p.a;}}[ui.col];
+    players.sort(function(a,b){
+      var va=val(a), vb=val(b);
+      if(va===null||vb===null){ if(va===vb) return byName(a,b); return va===null ? 1 : -1; }
+      var c = typeof va==='string' ? va.localeCompare(vb,'es') : va-vb;
+      return c ? c*ui.dir : byName(a,b);
+    });
+  }
+  var used = {}; players.forEach(function(x){x.m.forEach(function(id){used[id]=1;});});
+  var teams = okTeams.filter(function(t){return used[t.id];});
+  var assign = players.reduce(function(s,x){return s+x.m.length;},0);
+  var games = players.reduce(function(s,x){return s+x.p.st.n;},0);
+  return {players:players, teams:teams, assign:assign, games:games};
+}
+
+function chipTeam(id, dim, p){
+  var t=tById[id];
+  return '<button type="button" class="tag t'+t.ti+(dim?' dim':'')+'" data-team="'+id+'" title="'+esc(t.torneo)+'">'+esc(label(t))+(p?' '+marks(p,id):'')+'</button>';
+}
+
+function renderMatrix(S){
+  var grp=[]; S.teams.forEach(function(t){ var g=grp[grp.length-1]; if(g && g.ti===t.ti) g.n++; else grp.push({ti:t.ti,n:1,name:t.torneo}); });
+  var h = '<div class="scroll"><table class="mx"><thead><tr><th class="corner" rowspan="2">Jugador</th>';
+  grp.forEach(function(g){ h += '<th class="grp t'+g.ti+'" colspan="'+g.n+'">'+esc(g.name)+'</th>'; });
+  h += '</tr><tr>';
+  S.teams.forEach(function(t){ h += '<th class="tt t'+t.ti+'"><button type="button" class="vh" data-team="'+t.id+'" title="'+esc(label(t))+'">'+esc(short(t))+'</button></th>'; });
+  h += '</tr></thead><tbody>';
+  S.players.forEach(function(x){
+    h += '<tr><th class="pl" scope="row"><div class="row"><button type="button" class="link" data-player="'+x.p.i+'">'+esc(x.p.n)+'</button><span class="badges"><span class="badge" title="Equipos que cumplen los filtros">'+x.m.length+' eq.</span><span class="badge pj" title="Partidos jugados en 2026">'+x.p.st.n+' pj</span></span></div></th>';
+    S.teams.forEach(function(t){
+      if(!x.ms[t.id]){ h += '<td></td>'; return; }
+      var q=tinfo(x.p,t.id);
+      h += '<td class="on t'+t.ti+(q.played?'':' nj')+(q.ag?' ag':'')+'" title="'+esc(x.p.n+' · '+label(t)+' · '+(q.ag?'agregado · ':'')+(q.played?q.real+' partidos':'no jugó'))+'"><i></i></td>';
+    });
+    h += '</tr>';
+  });
+  h += '</tbody><tfoot><tr><th class="pl" scope="row" title="Jugaron / integran, entre los jugadores filtrados">Jugaron / integran</th>';
+  S.teams.forEach(function(t){
+    var c=0, pj=0; S.players.forEach(function(x){ if(x.ms[t.id]){ c++; if(tinfo(x.p,t.id).played) pj++; } });
+    h += '<td title="'+pj+' jugaron de '+c+'">'+pj+'/'+c+'</td>';
+  });
+  h += '</tr></tfoot></table></div>';
+  return h;
+}
+
+function renderList(S){
+  var h = '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)">'+
+    '<label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="allteams"'+(ui.all?' checked':'')+'> Mostrar todos los equipos de cada jugador, no solo los que cumplen los filtros</label>'+
+    '<span class="sp"></span><button type="button" class="btn primary" id="copy">Copiar listado</button><span class="toast" id="toast"></span></div>'+
+    '<div id="copyarea" style="padding:0 14px"></div>'+
+    '<div class="scroll"><table class="ls"><thead><tr>'+
+    [['name','Jugador','Jugador'],['age','Edad','Edad según la AAT'],['eq','Eq.','Cantidad de equipos'],['pj','Partidos','Partidos jugados en 2026 (individuales y dobles)'],['ind','Ind. / dob.','Individuales / dobles (ordena por individuales)'],['g','Gan.','Partidos ganados'],['l','Perd.','Partidos perdidos'],['pct','% gan.','Porcentaje de partidos ganados']].map(function(c){
+      var on = ui.col===c[0];
+      return '<th title="'+c[2]+'" aria-sort="'+(on ? (ui.dir>0?'ascending':'descending') : 'none')+'"><button type="button" class="sb" data-sort="'+c[0]+'">'+c[1]+'<span class="ar">'+(on ? (ui.dir>0?'▲':'▼') : '')+'</span></button></th>';
+    }).join('')+'<th>Equipos</th></tr></thead><tbody>';
+  S.players.forEach(function(x){
+    var ids = ui.all ? x.p.e : x.m, st = x.p.st;
+    h += '<tr><th class="nm" scope="row"><button type="button" class="link" data-player="'+x.p.i+'">'+esc(x.p.n)+'</button></th><td class="num">'+ageTxt(x.p)+'</td><td class="num">'+ids.length+'</td>'+
+      '<td class="num"><b>'+st.n+'</b></td><td class="num">'+st.sn+' / '+st.dn+'</td><td class="num">'+st.g+'</td><td class="num">'+st.l+'</td><td class="num">'+pctTxt(st)+'</td><td>'+
+      ids.map(function(id){return chipTeam(id, !x.ms[id], x.p);}).join('')+'</td></tr>';
+  });
+  h += '</tbody></table></div>';
+  return h;
+}
+
+function renderTeams(S){
+  var by = {}; S.teams.forEach(function(t){ (by[t.ti]=by[t.ti]||[]).push(t); });
+  var h='';
+  Object.keys(by).forEach(function(ti){
+    h += '<section class="tg t'+ti+'"><h3><i></i>'+esc(TORNEOS[ti])+'</h3><div class="teams">';
+    by[ti].forEach(function(t){
+      var pl = S.players.filter(function(x){return x.ms[t.id];}).sort(function(a,b){var ca=a.p.cd==null?1e9:a.p.cd, cb=b.p.cd==null?1e9:b.p.cd; return ca-cb || a.p.n.localeCompare(b.p.n,'es');});
+      var nj = pl.filter(function(x){return !tinfo(x.p,t.id).played;}).length, na = pl.filter(function(x){return tinfo(x.p,t.id).ag;}).length;
+      h += '<article class="card t'+t.ti+'"><header><button type="button" class="link tn" data-team="'+t.id+'">'+esc(label(t))+'</button><span class="badge" title="Jugadores en la lista">'+pl.length+'</span></header>'+
+        '<div class="sub" style="font-size:12.5px;color:var(--muted);margin:-2px 0 6px">'+(pl.length-nj)+' jugaron · '+nj+' no jugaron'+(na?' · '+na+' agregados':'')+'</div><ul>'+
+        pl.map(function(x){return '<li><span class="cn" title="Carnet de dobles (AAT)">'+(x.p.cd==null?'–':x.p.cd)+'</span><button type="button" class="link" data-player="'+x.p.i+'">'+esc(x.p.n)+'</button> '+marks(x.p,t.id,true)+'</li>';}).join('')+'</ul></article>';
+    });
+    h += '</div></section>';
+  });
+  return h;
+}
+
+function renderDetail(){
+  var d = document.getElementById('detail');
+  if(!ui.detail){ d.hidden = true; d.innerHTML=''; return; }
+  var h='';
+  if(ui.detail.type==='player'){
+    var p = P[ui.detail.id];
+    var ok = {}; T.filter(teamOk).forEach(function(t){ok[t.id]=1;});
+    var st = p.st;
+    h = '<button type="button" class="btn x" id="close" aria-label="Cerrar detalle">Cerrar</button><h2>'+esc(p.n)+'</h2><div class="sub">'+p.e.length+' equipos en 2026. Los de línea punteada no cumplen los filtros actuales.</div>'+
+      '<div class="stats">'+
+      (p.a==null?'':'<div class="stat"><b>'+p.a+'</b><span>a (AAT)</span></div>')+
+      '<div class="stat"><b>'+st.n+'</b><span>partidos</span></div>'+
+      '<div class="stat"><b>'+st.sn+'</b><span>individuales</span></div>'+
+      '<div class="stat"><b>'+st.dn+'</b><span>dobles</span></div>'+
+      '<div class="stat"><b>'+st.g+'</b><span>ganados</span></div>'+
+      '<div class="stat"><b>'+st.l+'</b><span>perdidos</span></div>'+
+      '<div class="stat"><b>'+pctTxt(st)+'</b><span>% ganados</span></div>'+
+      (st.wo ? '<div class="stat"><b>'+st.wo+'</b><span>por WO</span></div>' : '')+
+      '</div>';
+    TORNEOS.forEach(function(n,ti){
+      var ids = p.e.filter(function(id){return tById[id].ti===ti;});
+      if(!ids.length) return;
+      h += '<div class="sub" style="margin:8px 0 4px"><b>'+esc(n)+'</b></div><div>'+ids.map(function(id){return chipTeam(id, !ok[id], p);}).join('')+'</div>';
+    });
+  } else {
+    var t = tById[ui.detail.id];
+    var roster = P.filter(function(p){return p.e.indexOf(t.id)>=0;});
+    h = '<button type="button" class="btn x" id="close" aria-label="Cerrar detalle">Cerrar</button><h2>'+esc(label(t))+'</h2><div class="sub">'+esc(t.torneo)+' · '+roster.length+' jugadores · '+roster.filter(function(p){return tinfo(p,t.id).played;}).length+' jugaron · '+roster.filter(function(p){return !tinfo(p,t.id).played;}).length+' no jugaron · '+roster.filter(function(p){return tinfo(p,t.id).ag;}).length+' agregados</div><div class="grid">'+
+      roster.map(function(p){return '<div><button type="button" class="link" data-player="'+p.i+'">'+esc(p.n)+'</button> '+marks(p,t.id)+'</div>';}).join('')+'</div>';
+  }
+  d.innerHTML = h; d.hidden = false;
+}
+
+function render(){
+  var S = compute();
+  document.getElementById('kpis').innerHTML =
+    '<div class="kpi"><b>'+S.players.length+'</b><span>jugadores</span></div>'+
+    '<div class="kpi"><b>'+S.teams.length+'</b><span>equipos</span></div>'+
+    '<div class="kpi"><b>'+S.assign+'</b><span>participaciones</span></div>'+
+    '<div class="kpi"><b>'+S.games+'</b><span>partidos jugados</span></div>';
+  var v = document.getElementById('view');
+  if(!S.players.length){
+    v.innerHTML = '<div class="empty">Ningún jugador cumple estos filtros. <button type="button" class="btn" id="reset2">Limpiar filtros</button></div>';
+  } else if(ui.tab==='matriz') v.innerHTML = renderMatrix(S);
+  else if(ui.tab==='listado') v.innerHTML = renderList(S);
+  else v.innerHTML = renderTeams(S);
+  document.getElementById('legend').style.display = ui.tab==='matriz' ? '' : 'none';
+  Array.prototype.forEach.call(document.querySelectorAll('.chip'), function(c){
+    c.setAttribute('aria-pressed', F[c.dataset.k][c.dataset.v] ? 'true' : 'false');
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(b){
+    b.setAttribute('aria-selected', b.dataset.tab===ui.tab ? 'true':'false');
+  });
+  renderDetail();
+  window.__S = S;
+}
+
+function resetAll(){
+  GROUPS.forEach(function(g){F[g[0]]={};});
+  F.q=''; F.min=1; F.minp=0; F.part='';
+  document.getElementById('q').value=''; document.getElementById('min').value='1'; document.getElementById('minp').value='0'; document.getElementById('part').value='';
+  render();
+}
+
+function copyText(txt, toast, area, okMsg){
+  function fallback(){
+    area.innerHTML = '<textarea class="copybox" readonly></textarea>';
+    var ta = area.firstChild; ta.value = txt; ta.focus(); ta.select();
+    toast.textContent = 'Seleccioná el texto y copialo con Ctrl+C';
+  }
+  try{ navigator.clipboard.writeText(txt).then(function(){ area.innerHTML=''; toast.textContent = okMsg; }, fallback); }catch(e){ fallback(); }
+}
+function refreshData(){
+  var txt = 'Actualizá la página "Equipos 2026 por jugador" ('+URL_PAGINA+'). Volvé a bajar de deportivoaat.com.ar las listas de buena fe de los equipos de San Martín (con los agregados) y los partidos de cada jugador por equipo, y republicá la página. Los datos actuales son del '+FECHA+'.';
+  copyText(txt, document.getElementById('asof'), document.getElementById('refreshbox'), 'Pedido copiado. Pegalo en el chat con Claude y la página se actualiza ahí. Datos actuales al '+FECHA+'.');
+}
+function copyList(){
+  var S = window.__S;
+  var lines = ['Jugador\tEdad\tCantidad de equipos\tPartidos\tIndividuales\tDobles\tGanados\tPerdidos\tEquipos'];
+  S.players.forEach(function(x){
+    var ids = ui.all ? x.p.e : x.m, st = x.p.st;
+    lines.push(x.p.n+'\t'+(x.p.a==null?'':x.p.a)+'\t'+ids.length+'\t'+st.n+'\t'+st.sn+'\t'+st.dn+'\t'+st.g+'\t'+st.l+'\t'+ids.map(function(id){return label(tById[id])+' ('+tById[id].torneo+')'+marksTxt(x.p,id);}).join('; '));
+  });
+  var txt = lines.join('\n');
+  var toast = document.getElementById('toast');
+  function fallback(){
+    document.getElementById('copyarea').innerHTML = '<textarea class="copybox" id="cb" readonly></textarea>';
+    var ta = document.getElementById('cb'); ta.value = txt; ta.focus(); ta.select();
+    toast.textContent = 'Seleccioná el texto y copialo con Ctrl+C';
+  }
+  try{
+    navigator.clipboard.writeText(txt).then(function(){ toast.textContent = 'Copiado: '+S.players.length+' jugadores'; }, fallback);
+  }catch(e){ fallback(); }
+}
+
+document.addEventListener('click', function(e){
+  var el = e.target.closest('button, input'); if(!el) return;
+  if(el.classList.contains('chip')){
+    var k=el.dataset.k, v=el.dataset.v;
+    if(F[k][v]) delete F[k][v]; else F[k][v]=1;
+    render(); return;
+  }
+  if(el.dataset.tab){ ui.tab=el.dataset.tab; try{ location.hash=ui.tab; }catch(_){} render(); return; }
+  if(el.dataset.player!==undefined){ ui.detail={type:'player',id:+el.dataset.player}; renderDetail(); return; }
+  if(el.dataset.team!==undefined){ ui.detail={type:'team',id:+el.dataset.team}; renderDetail(); return; }
+  if(el.id==='close'){ ui.detail=null; renderDetail(); return; }
+  if(el.id==='reset' || el.id==='reset2'){ resetAll(); return; }
+  if(el.id==='copy'){ copyList(); return; }
+  if(el.id==='refresh'){ refreshData(); return; }
+  if(el.dataset.sort){ var c=el.dataset.sort; if(ui.col===c) ui.dir=-ui.dir; else { ui.col=c; ui.dir = c==='name' ? 1 : -1; } render(); return; }
+  if(el.id==='allteams'){ ui.all = el.checked; render(); return; }
+});
+document.addEventListener('keydown', function(e){ if(e.key==='Escape' && ui.detail){ ui.detail=null; renderDetail(); } });
+document.getElementById('q').addEventListener('input', function(e){ F.q=e.target.value; render(); });
+document.getElementById('min').addEventListener('change', function(e){ F.min=+e.target.value; render(); });
+document.getElementById('minp').addEventListener('change', function(e){ F.minp=+e.target.value; render(); });
+document.getElementById('part').addEventListener('change', function(e){ F.part=e.target.value; render(); });
+document.getElementById('sort').addEventListener('change', function(e){ ui.sort=e.target.value; ui.col=''; render(); });
+function fromHash(){
+  var h=(location.hash||'').replace('#','');
+  if(h==='matriz'||h==='listado'||h==='equipos'){ ui.tab=h; render(); }
+}
+window.addEventListener('hashchange', fromHash);
+
+buildGroups();
+fromHash();
+render();
+})();
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script>
+</body>
+</html>
